@@ -4,9 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/prebuild.js",
-    "build": "next build",
-    "postbuild": "node scripts/postbuild.js",
+    "build": "next build --webpack",
     "start": "next start"
   },
   "dependencies": {
