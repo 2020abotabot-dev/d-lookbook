@@ -105,6 +105,13 @@ export async function signUp(formData: FormData): Promise<void> {
     redirect("/signup?error=account_link_failed");
   }
 
+  // If Supabase requires email confirmation, authData.session will be null.
+  // Redirect to a "check your email" state instead of dashboard.
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    redirect("/signup?check_email=1");
+  }
+
   redirect("/dashboard");
 }
 
