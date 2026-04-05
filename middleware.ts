@@ -55,13 +55,19 @@ export async function middleware(request: NextRequest) {
   const { response, userId } = await updateSession(request);
 
   // 2. Determine context from hostname
-  const isPlatformDomain =
-    hostname === PLATFORM_DOMAIN || hostname.startsWith("localhost");
+  // Platform = exact domain, localhost, or any *.vercel.app preview URL
+  const isTenantSubdomain = hostname.endsWith(`.${PLATFORM_DOMAIN}`);
+  const isPlatformDomain  =
+    !isTenantSubdomain &&
+    (hostname === PLATFORM_DOMAIN ||
+     hostname.startsWith("localhost") ||
+     hostname.endsWith(".vercel.app"));
 
   if (!isPlatformDomain) {
+    // Could be a tenant subdomain (slug.dlookbook.com) or a custom domain
     let tenantId: string | null = null;
 
-    if (hostname.endsWith(`.${PLATFORM_DOMAIN}`)) {
+    if (isTenantSubdomain) {
       const slug = hostname.slice(0, -(`.${PLATFORM_DOMAIN}`.length));
       tenantId = await resolveTenantFromSlug(slug);
     } else {
