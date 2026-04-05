@@ -1,35 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
-import { createServerClient } from "@supabase/ssr";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
-const TEST_MODE     = process.env.NEXT_PUBLIC_TEST_MODE === "true";
+const TEST_MODE       = process.env.NEXT_PUBLIC_TEST_MODE === "true";
 const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "dlookbook.com";
-const PLATFORM_ROUTES  = ["/dashboard", "/settings", "/products", "/builder"];
-const PUBLIC_ROUTES    = ["/login", "/signup", "/auth"];
-
-// ── Tenant resolution ─────────────────────────────────────────────────────────
-
-async function resolveTenantFromSlug(slug: string): Promise<string | null> {
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { cookies: { getAll: () => [], setAll: () => {} } }
-  );
-  const { data } = await supabase.from("tenants").select("id").eq("slug", slug).single();
-  return data?.id ?? null;
-}
-
-async function resolveTenantFromDomain(domain: string): Promise<string | null> {
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { cookies: { getAll: () => [], setAll: () => {} } }
-  );
-  const { data } = await supabase.from("tenants").select("id").eq("custom_domain", domain).single();
-  return data?.id ?? null;
-}
+const PLATFORM_ROUTES = ["/dashboard", "/settings", "/products", "/builder"];
+const PUBLIC_ROUTES   = ["/login", "/signup", "/auth"];
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
 
@@ -41,21 +17,46 @@ export async function middleware(request: NextRequest) {
   if (TEST_MODE) {
     const response = NextResponse.next({ request });
     response.headers.set("x-test-mode", "true");
-    // In test mode, treat all users as authenticated on platform routes
-    // but still allow login/signup to redirect to dashboard for the demo flow
     if (pathname === "/login" || pathname === "/signup") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return response;
   }
 
-  // ── Production flow ───────────────────────────────────────────────────────
+  // ── Production flow — lazy-import Supabase to keep edge tracing clean ─────
+
+  const [{ updateSession }, { createServerClient }] = await Promise.all([
+    import("@/lib/supabase/middleware"),
+    import("@supabase/ssr"),
+  ]);
+
+  // Helper: query tenants without a user session
+  function makeServiceClient() {
+    return createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { cookies: { getAll: () => [], setAll: () => {} } }
+    );
+  }
+
+  async function resolveTenantFromSlug(slug: string): Promise<string | null> {
+    const { data } = await makeServiceClient()
+      .from("tenants").select("id").eq("slug", slug).single();
+    return data?.id ?? null;
+  }
+
+  async function resolveTenantFromDomain(domain: string): Promise<string | null> {
+    const { data } = await makeServiceClient()
+      .from("tenants").select("id").eq("custom_domain", domain).single();
+    return data?.id ?? null;
+  }
 
   // 1. Refresh Supabase session
   const { response, userId } = await updateSession(request);
 
   // 2. Determine context from hostname
-  const isPlatformDomain = hostname === PLATFORM_DOMAIN || hostname.startsWith("localhost");
+  const isPlatformDomain =
+    hostname === PLATFORM_DOMAIN || hostname.startsWith("localhost");
 
   if (!isPlatformDomain) {
     let tenantId: string | null = null;
