@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
-import { MOCK_PRODUCTS, MOCK_TENANT } from "@/lib/mock/data";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentTenant } from "@/lib/server/session";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import ProductForm from "@/components/admin/products/ProductForm";
+import type { DbProduct } from "@/types/database";
 
 export const metadata = { title: "Edit Product — DLookBook" };
 
@@ -11,11 +13,18 @@ interface Props {
 
 export default async function EditProductPage({ params }: Props) {
   const { id } = await params;
-  const tenantId = MOCK_TENANT.id; // TODO: real tenant from session
+  const { tenantId } = await getCurrentTenant();
+  const service = createServiceClient();
 
-  // TODO: fetch from Supabase when !TEST_MODE
-  const product = MOCK_PRODUCTS.find(p => p.id === id);
-  if (!product) notFound();
+  const { data } = await service
+    .from("products")
+    .select("*")
+    .eq("id", id)
+    .eq("tenant_id", tenantId)
+    .single();
+
+  if (!data) notFound();
+  const product = data as DbProduct;
 
   return (
     <div className="platform-page platform-page--wide">

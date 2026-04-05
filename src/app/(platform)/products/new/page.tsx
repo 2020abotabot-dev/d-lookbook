@@ -1,11 +1,11 @@
-import { MOCK_TENANT } from "@/lib/mock/data";
+import { getCurrentTenant } from "@/lib/server/session";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import ProductForm from "@/components/admin/products/ProductForm";
 
 export const metadata = { title: "Add Product — DLookBook" };
 
-export default function NewProductPage() {
-  const tenantId = MOCK_TENANT.id; // TODO: real tenant from session
+export default async function NewProductPage() {
+  const { tenantId } = await getCurrentTenant();
 
   return (
     <div className="platform-page platform-page--wide">

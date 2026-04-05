@@ -1,12 +1,22 @@
-import { MOCK_PRODUCTS, MOCK_TENANT } from "@/lib/mock/data";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentTenant } from "@/lib/server/session";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import ImportTabs from "@/components/admin/products/ImportTabs";
+import type { DbProduct } from "@/types/database";
 
 export const metadata = { title: "Import Products — DLookBook" };
 
 export default async function ImportProductsPage() {
-  const tenantId = MOCK_TENANT.id; // TODO: real tenant from session
-  const products = MOCK_PRODUCTS;  // TODO: fetch from Supabase
+  const { tenantId } = await getCurrentTenant();
+  const service = createServiceClient();
+
+  const { data } = await service
+    .from("products")
+    .select("id, name, sku, category")
+    .eq("tenant_id", tenantId)
+    .order("name");
+
+  const products = (data ?? []) as Pick<DbProduct, "id" | "name" | "sku" | "category">[];
 
   return (
     <div className="platform-page platform-page--wide">
@@ -18,7 +28,7 @@ export default async function ImportProductsPage() {
         </div>
       </div>
 
-      <ImportTabs tenantId={tenantId} products={products} />
+      <ImportTabs tenantId={tenantId} products={products as DbProduct[]} />
     </div>
   );
 }

@@ -1,5 +1,7 @@
-import { MOCK_LOOKBOOKS } from "@/lib/mock/data";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getCurrentTenant } from "@/lib/server/session";
 import Link from "next/link";
+import type { DbLookbook } from "@/types/database";
 
 export const metadata = { title: "Lookbooks — DLookBook" };
 
@@ -10,8 +12,17 @@ const STATUS_CLASS: Record<string, string> = {
 };
 
 export default async function BuilderPage() {
-  // TODO: fetch from Supabase when !TEST_MODE
-  const lookbooks = MOCK_LOOKBOOKS;
+  const { tenantId } = await getCurrentTenant();
+  const service = createServiceClient();
+
+  const { data } = await service
+    .from("lookbooks")
+    .select("id, title, description, status, published_url, updated_at")
+    .eq("tenant_id", tenantId)
+    .neq("status", "archived")
+    .order("updated_at", { ascending: false });
+
+  const lookbooks = (data ?? []) as Pick<DbLookbook, "id" | "title" | "description" | "status" | "published_url">[];
 
   return (
     <div className="platform-page platform-page--wide">
