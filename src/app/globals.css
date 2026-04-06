@@ -639,16 +639,46 @@ body {
 .import-tabs__tab--active { color: #111; border-bottom-color: var(--tenant-accent); font-weight: 500; }
 .import-tabs__content { min-height: 240px; }
 .importer { display: flex; flex-direction: column; gap: 1rem; }
-.importer__drop { border: 2px dashed #d1d5db; border-radius: 10px; padding: 2rem 1.5rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: .75rem; transition: border-color .12s; }
+.importer__drop { border: 2px dashed #d1d5db; border-radius: 10px; padding: 2.5rem 1.5rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: .75rem; transition: border-color .12s; cursor: default; }
 .importer__drop:hover { border-color: var(--tenant-accent); }
-.importer__drop-text { font-size: .9375rem; color: #666; margin: 0; }
+.importer__drop-icon { font-size: 2rem; line-height: 1; margin: 0; }
+.importer__drop-text { font-size: 1rem; font-weight: 600; color: #333; margin: 0; }
+.importer__drop-hint { font-size: .8125rem; color: #888; margin: 0; line-height: 1.6; }
+.importer__drop-btns { display: flex; gap: .5rem; margin-top: .25rem; }
 .importer__file-input { display: none; }
 .importer__info { font-size: .875rem; color: #888; margin: 0; }
-.importer__code { background: #f0f0f0; padding: 1px 4px; border-radius: 3px; font-family: monospace; }
-.importer__actions { display: flex; gap: .75rem; }
+.importer__code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: .8125rem; }
+.importer__actions { display: flex; gap: .75rem; margin-top: .5rem; }
 .importer__success { font-size: 1rem; font-weight: 600; color: #16a34a; margin: 0; }
 .importer__errors { font-size: .875rem; color: #dc2626; padding-left: 1rem; margin: 0; }
 .importer--done { align-items: flex-start; }
+.importer--progress { align-items: stretch; }
+.importer__progress-bar { height: 6px; background: #e5e5e5; border-radius: 3px; overflow: hidden; }
+.importer__progress-fill { height: 100%; background: var(--tenant-accent); border-radius: 3px; transition: width .2s; }
+
+/* Image import summary bar */
+.img-import-summary { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; padding: .625rem .875rem; background: #f8f8f7; border-radius: 8px; }
+.img-import-summary__stat { font-size: .8125rem; font-weight: 600; padding: .2rem .6rem; border-radius: 99px; }
+.img-import-summary__stat--good { background: #dcfce7; color: #166534; }
+.img-import-summary__stat--ai   { background: #dbeafe; color: #1e40af; }
+.img-import-summary__stat--warn { background: #fef3c7; color: #92400e; }
+.img-import-summary__total { font-size: .8125rem; color: #888; margin-left: auto; }
+
+/* Image match list */
+.image-match-list { display: flex; flex-direction: column; gap: .375rem; }
+.image-match-list__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .25rem; }
+.image-match-list__title { font-size: .875rem; font-weight: 600; color: #444; margin: 0; }
+.image-match-list__ai-btn { padding: .3rem .875rem; font-size: .8125rem; }
+.image-match-row { display: flex; align-items: center; gap: .625rem; padding: .5rem .625rem; border: 1px solid #f0f0f0; border-radius: 6px; background: #fff; font-size: .8125rem; }
+.image-match-row--unmatched { border-color: #fde8d8; background: #fffbf7; }
+.image-match-row__thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; flex-shrink: 0; background: #eee; }
+.image-match-row__info { flex: 1; display: flex; flex-direction: column; gap: .125rem; min-width: 0; }
+.image-match-row__filename { font-family: monospace; font-size: .75rem; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.image-match-row__product { font-weight: 500; color: #111; }
+.image-match-row__ai-hint { font-size: .7rem; color: #1e40af; }
+.image-match-row__angle { font-size: .75rem; color: #888; white-space: nowrap; }
+.image-match-row__badge { font-size: .6875rem; font-weight: 700; padding: .15rem .5rem; border-radius: 99px; white-space: nowrap; flex-shrink: 0; }
+.image-match-row__assign { flex-shrink: 0; width: 220px; font-size: .8125rem; padding: .3rem .5rem; }
 .importer__sheet-list, .importer__file-list { display: flex; flex-direction: column; gap: .5rem; align-items: flex-start; }
 .importer--stub { padding: 1.5rem; background: #f9f9f9; border-radius: 10px; border: 1px solid #e5e5e5; }
 .importer__stub-title { font-size: 1rem; font-weight: 600; margin: 0 0 .5rem; }

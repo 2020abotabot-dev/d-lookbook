@@ -122,6 +122,49 @@ export async function importProducts(
   return { imported, errors };
 }
 
+/**
+ * Upload one image file to Supabase Storage and append its permanent URL to
+ * the product's images array.  Returns the public URL on success.
+ */
+export async function uploadProductImage(
+  file: File,
+  productId: string,
+  tenantId: string,
+  currentImages: string[]
+): Promise<{ url?: string; error?: string }> {
+  if (TEST_MODE) {
+    return { url: `https://picsum.photos/seed/${productId}-${file.name}/800/600` };
+  }
+
+  const service = createServiceClient();
+  await service.storage.createBucket("brand-assets", { public: true }).catch(() => {});
+
+  const ext  = (file.name.split(".").pop() ?? "jpg").toLowerCase();
+  // Use a hash-like name based on original filename to avoid collisions
+  const slug = file.name.replace(/\.[^.]+$/, "").replace(/[^a-z0-9]/gi, "-").toLowerCase();
+  const path = `${tenantId}/products/${productId}/${slug}.${ext}`;
+
+  const bytes = await file.arrayBuffer();
+  const { error: uploadErr } = await service.storage
+    .from("brand-assets")
+    .upload(path, bytes, { upsert: true, contentType: file.type || "image/jpeg" });
+
+  if (uploadErr) return { error: uploadErr.message };
+
+  const { data } = service.storage.from("brand-assets").getPublicUrl(path);
+  const url = data.publicUrl;
+
+  // Append to product images (avoid duplicates)
+  const next = [...new Set([...currentImages, url])];
+  await service
+    .from("products")
+    .update({ images: next, updated_at: new Date().toISOString() })
+    .eq("id", productId)
+    .eq("tenant_id", tenantId);
+
+  return { url };
+}
+
 export async function createProductAndRedirect(formData: FormData): Promise<void> {
   const tenantId = formData.get("tenant_id") as string;
 
