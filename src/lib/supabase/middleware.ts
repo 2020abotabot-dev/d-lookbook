@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * Refreshes the Supabase session from cookies and returns an updated response.
- * Call this at the top of middleware.ts before any routing logic.
+ *
+ * Uses getSession() (local cookie read, no network call) for the userId check
+ * so middleware never makes an outbound call to Supabase auth API.
+ * Server components use getUser() directly for verified user data.
  */
 export async function updateSession(request: NextRequest): Promise<{
   response: NextResponse;
@@ -28,7 +31,10 @@ export async function updateSession(request: NextRequest): Promise<{
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // getSession() reads from cookies locally — no outbound network call.
+  // This is intentional: middleware only needs to know if a session exists.
+  // Actual user verification (getUser) happens inside server components.
+  const { data: { session } } = await supabase.auth.getSession();
 
-  return { response, userId: user?.id ?? null };
+  return { response, userId: session?.user?.id ?? null };
 }
