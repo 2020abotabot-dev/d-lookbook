@@ -33,11 +33,14 @@ import type { DbLookbook, DbLookbookSection, DbLookbookProduct, DbProduct } from
 import type { TenantConfig } from "@/types/tenant";
 
 interface LookbookRendererProps {
-  tenant: TenantConfig;
-  lookbook: DbLookbook;
-  sections: DbLookbookSection[];
-  assignments: DbLookbookProduct[];
-  products: DbProduct[];
+  tenant:            TenantConfig;
+  lookbook:          DbLookbook;
+  sections:          DbLookbookSection[];
+  assignments:       DbLookbookProduct[];
+  products:          DbProduct[];
+  /** Buyer preview mode — hides all customisation UI, applies sales rep's selection */
+  buyerMode?:        boolean;
+  initialHiddenIds?: string[];
 }
 
 export default function LookbookRenderer({
@@ -46,6 +49,8 @@ export default function LookbookRenderer({
   sections,
   assignments,
   products,
+  buyerMode = false,
+  initialHiddenIds,
 }: LookbookRendererProps) {
   const template = getTemplate(lookbook.template_id);
   const { branding } = tenant;
@@ -94,7 +99,7 @@ export default function LookbookRenderer({
   return (
     <PrintProvider>
     <AssortmentProvider>
-    <LookbookFilterProvider>
+    <LookbookFilterProvider initialHiddenIds={initialHiddenIds} readOnly={buyerMode}>
       {/* Google Fonts injection */}
       {fontsToLoad.length > 0 && (
         <link
@@ -114,22 +119,31 @@ export default function LookbookRenderer({
           template={template}
         />
 
-        {/* Hamburger menu */}
-        <HamburgerMenu
-          brandName={tenant.name}
-          logoUrl={branding.logo_url || undefined}
-          lookbookTitle={lookbook.title}
-          products={assignedProducts}
-          sections={orderedSections}
-        />
+        {/* Hamburger menu — hidden in buyer preview mode */}
+        {!buyerMode && (
+          <HamburgerMenu
+            brandName={tenant.name}
+            logoUrl={branding.logo_url || undefined}
+            lookbookTitle={lookbook.title}
+            products={assignedProducts}
+            sections={orderedSections}
+          />
+        )}
 
-        {/* Product drawer (right side) */}
-        <ProductDrawer products={assignedProducts} />
+        {/* Product drawer — hidden in buyer preview mode */}
+        {!buyerMode && <ProductDrawer products={assignedProducts} />}
 
-        {/* Category filter bar (sticky above sections) */}
-        {template.showFilterBar && categories.length > 0 && (
+        {/* Category filter bar — hidden in buyer preview mode */}
+        {!buyerMode && template.showFilterBar && categories.length > 0 && (
           <div className="lb-fbar-wrap">
             <PublicFilterBar categories={categories} />
+          </div>
+        )}
+
+        {/* Buyer preview badge */}
+        {buyerMode && (
+          <div className="lb-buyer-badge">
+            Curated selection
           </div>
         )}
 
@@ -242,14 +256,16 @@ export default function LookbookRenderer({
         onClose={() => setActiveProduct(null)}
       />
 
-      {/* Floating assortment bar */}
-      <AssortmentBar />
+      {/* Floating assortment bar — hidden in buyer preview mode */}
+      {!buyerMode && <AssortmentBar />}
 
       {/* Print layout — hidden on screen, shown on @media print */}
-      <AssortmentPrint
-        tenant={tenant}
-        lookbookTitle={lookbook.title}
-      />
+      {!buyerMode && (
+        <AssortmentPrint
+          tenant={tenant}
+          lookbookTitle={lookbook.title}
+        />
+      )}
     </LookbookFilterProvider>
     </AssortmentProvider>
     </PrintProvider>

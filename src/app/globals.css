@@ -1296,6 +1296,26 @@ body {
 .lb-banner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; }
 .lb-banner__cta:hover { opacity: 0.7; }
 
+/* ── Buyer preview badge ── */
+.lb-buyer-badge {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.75);
+  color: rgba(255,255,255,0.85);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.4rem 1rem;
+  border-radius: 99px;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  z-index: 200;
+  white-space: nowrap;
+}
+
 /* ── Footer ── */
 .lb-footer {
   padding: 3rem 2.5rem;
@@ -1673,6 +1693,8 @@ body {
 .hm-action-btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.25); color: #fff; }
 .hm-action-btn--accent { border-color: var(--brand-accent, #0070f3); color: #fff; }
 .hm-action-btn--accent:hover { background: rgba(var(--brand-accent-rgb, 0,112,243), 0.2); }
+.hm-action-btn--share { border-color: rgba(255,255,255,0.4); color: rgba(255,255,255,0.85); }
+.hm-action-btn--share:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.5); color: #fff; }
 .hm-action-icon { font-size: 0.9rem; }
 .hm-action-count {
   margin-left: auto; font-size: 0.72rem; font-weight: 700;

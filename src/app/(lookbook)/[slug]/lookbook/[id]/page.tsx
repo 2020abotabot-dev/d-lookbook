@@ -14,7 +14,8 @@ export const revalidate = 3600;
 export const dynamicParams = true;
 
 interface Props {
-  params: Promise<{ slug: string; id: string }>;
+  params:       Promise<{ slug: string; id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -28,8 +29,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: data?.title ?? "Lookbook" };
 }
 
-export default async function SpecificLookbookPage({ params }: Props) {
+/** Decode the ?v= buyer-preview token → array of hidden product IDs */
+function decodeBuyerToken(v: string): string[] | null {
+  try {
+    const json = Buffer.from(v, "base64url").toString("utf-8");
+    const arr  = JSON.parse(json);
+    return Array.isArray(arr) ? arr as string[] : null;
+  } catch { return null; }
+}
+
+export default async function SpecificLookbookPage({ params, searchParams }: Props) {
   const { slug, id } = await params;
+  const sp = await searchParams;
+
+  // ?v= token = buyer preview mode (sales rep shared link)
+  const vParam = typeof sp.v === "string" ? sp.v : undefined;
+  const buyerHiddenIds = vParam ? decodeBuyerToken(vParam) : null;
+  const buyerMode = buyerHiddenIds !== null;
 
   if (TEST_MODE) {
     const lookbook = MOCK_LOOKBOOKS.find(l => l.id === id) ?? MOCK_LOOKBOOKS[0];
@@ -40,6 +56,8 @@ export default async function SpecificLookbookPage({ params }: Props) {
         sections={MOCK_SECTIONS.filter(s => s.lookbook_id === lookbook.id)}
         assignments={MOCK_LOOKBOOK_PRODUCTS.filter(lp => lp.lookbook_id === lookbook.id)}
         products={MOCK_PRODUCTS}
+        buyerMode={buyerMode}
+        initialHiddenIds={buyerHiddenIds ?? undefined}
       />
     );
   }
@@ -97,6 +115,8 @@ export default async function SpecificLookbookPage({ params }: Props) {
       sections={(sectionRows ?? []) as DbLookbookSection[]}
       assignments={(assignmentRows ?? []) as DbLookbookProduct[]}
       products={(productRows ?? []) as DbProduct[]}
+      buyerMode={buyerMode}
+      initialHiddenIds={buyerHiddenIds ?? undefined}
     />
   );
 }

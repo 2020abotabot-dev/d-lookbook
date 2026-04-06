@@ -53,12 +53,26 @@ function saveHidden(s: Set<string>) {
   try { localStorage.setItem(LS_KEY, JSON.stringify([...s])); } catch {}
 }
 
-export function LookbookFilterProvider({ children }: { children: ReactNode }) {
+export function LookbookFilterProvider({
+  children,
+  initialHiddenIds,
+  readOnly = false,
+}: {
+  children:         ReactNode;
+  initialHiddenIds?: string[];
+  readOnly?:         boolean;
+}) {
   const [filter,    setFilter]    = useState<LookbookFilterState>(EMPTY);
-  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(
+    initialHiddenIds ? new Set(initialHiddenIds) : new Set()
+  );
 
-  // Hydrate from localStorage once on mount
-  useEffect(() => { setHiddenIds(loadHidden()); }, []);
+  // Hydrate from localStorage — skip in buyer/readOnly mode (use URL state instead)
+  useEffect(() => {
+    if (readOnly || initialHiddenIds) return;
+    setHiddenIds(loadHidden());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── filter bar ───────────────────────────────────────────────
   const setSearch   = useCallback((v: string) => setFilter(f => ({ ...f, search: v })), []);

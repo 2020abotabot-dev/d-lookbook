@@ -26,6 +26,20 @@ export default function HamburgerMenu({ brandName, logoUrl, lookbookTitle, produ
     hiddenIds, showAll,
   } = useLookbookFilter();
 
+  const [copied, setCopied] = useState(false);
+
+  function handleShareView() {
+    // Encode hidden IDs as base64url and append as ?v= param
+    const hiddenArr = [...hiddenIds];
+    const token = btoa(JSON.stringify(hiddenArr))
+      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const url = `${window.location.origin}${window.location.pathname}?v=${token}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  }
+
   // Lock body scroll when open
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -104,6 +118,14 @@ export default function HamburgerMenu({ brandName, logoUrl, lookbookTitle, produ
                 <span className="hm-action-hidden-badge">{hiddenCount} hidden</span>
               )}
               <span className="hm-action-arrow">→</span>
+            </button>
+
+            <button className="hm-action-btn hm-action-btn--share" onClick={handleShareView}>
+              <span className="hm-action-icon">↗</span>
+              {copied ? "Link copied!" : "Share this view"}
+              {hiddenCount > 0 && !copied && (
+                <span className="hm-action-hidden-badge">{products.length - hiddenCount} products</span>
+              )}
             </button>
 
             {count > 0 && (
