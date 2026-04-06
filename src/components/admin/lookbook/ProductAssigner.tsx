@@ -31,10 +31,11 @@ interface ProductAssignerProps {
   allProducts: DbProduct[];
   sections: DbLookbookSection[];
   initialAssignments: DbLookbookProduct[];
+  onAssignmentsChange?: (assignments: DbLookbookProduct[]) => void;
 }
 
 export default function ProductAssigner({
-  lookbookId, tenantId, allProducts, sections, initialAssignments
+  lookbookId, tenantId, allProducts, sections, initialAssignments, onAssignmentsChange
 }: ProductAssignerProps) {
   const gridSections = sections.filter(s => s.type === "product_grid");
 
@@ -51,6 +52,22 @@ export default function ProductAssigner({
       return map;
     }
   );
+
+  function notifyParent(next: Record<string, AssignedProduct[]>) {
+    if (!onAssignmentsChange) return;
+    const flat: DbLookbookProduct[] = Object.entries(next).flatMap(([sectionId, items]) =>
+      items.map(a => ({
+        id:          `${lookbookId}-${sectionId}-${a.productId}`,
+        lookbook_id: lookbookId,
+        product_id:  a.productId,
+        tenant_id:   tenantId,
+        section:     sectionId,
+        position:    a.position,
+        featured:    a.featured,
+      }))
+    );
+    onAssignmentsChange(flat);
+  }
 
   const [search, setSearch] = useState("");
 
@@ -71,28 +88,31 @@ export default function ProductAssigner({
   async function handleAssign(product: DbProduct) {
     const position = sectionAssigned.length;
     const newEntry: AssignedProduct = { productId: product.id, position, featured: false };
-    setAssignments(prev => ({
-      ...prev,
-      [activeSectionId]: [...(prev[activeSectionId] ?? []), newEntry],
-    }));
+    const next = { ...assignments, [activeSectionId]: [...(assignments[activeSectionId] ?? []), newEntry] };
+    setAssignments(next);
+    notifyParent(next);
     await assignProduct(lookbookId, product.id, tenantId, activeSectionId, position);
   }
 
   async function handleRemove(productId: string) {
-    setAssignments(prev => ({
-      ...prev,
-      [activeSectionId]: (prev[activeSectionId] ?? []).filter(a => a.productId !== productId),
-    }));
+    const next = {
+      ...assignments,
+      [activeSectionId]: (assignments[activeSectionId] ?? []).filter(a => a.productId !== productId),
+    };
+    setAssignments(next);
+    notifyParent(next);
     await removeProduct(lookbookId, productId);
   }
 
   async function handleToggleFeatured(productId: string) {
-    setAssignments(prev => ({
-      ...prev,
-      [activeSectionId]: (prev[activeSectionId] ?? []).map(a =>
+    const next = {
+      ...assignments,
+      [activeSectionId]: (assignments[activeSectionId] ?? []).map(a =>
         a.productId === productId ? { ...a, featured: !a.featured } : a
       ),
-    }));
+    };
+    setAssignments(next);
+    notifyParent(next);
     const current = sectionAssigned.find(a => a.productId === productId);
     if (current) {
       await assignProduct(lookbookId, productId, tenantId, activeSectionId, current.position, !current.featured);
@@ -105,9 +125,11 @@ export default function ProductAssigner({
     const list = sectionAssigned;
     const oldIdx = list.findIndex(a => a.productId === active.id);
     const newIdx = list.findIndex(a => a.productId === over.id);
-    const next = arrayMove(list, oldIdx, newIdx).map((a, i) => ({ ...a, position: i }));
-    setAssignments(prev => ({ ...prev, [activeSectionId]: next }));
-    reorderProducts(lookbookId, activeSectionId, next.map(a => a.productId));
+    const reordered = arrayMove(list, oldIdx, newIdx).map((a, i) => ({ ...a, position: i }));
+    const next = { ...assignments, [activeSectionId]: reordered };
+    setAssignments(next);
+    notifyParent(next);
+    reorderProducts(lookbookId, activeSectionId, reordered.map(a => a.productId));
   }
 
   return (

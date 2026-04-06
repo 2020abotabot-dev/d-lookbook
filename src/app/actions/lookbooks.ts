@@ -186,7 +186,8 @@ export async function publishLookbook(
   tenantSlug: string
 ): Promise<{ url?: string; error?: string }> {
   if (TEST_MODE) {
-    return { url: `https://${tenantSlug}.dlookbook.com/lookbook/${id}` };
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://dlookbook.vercel.app").replace(/\/$/, "");
+    return { url: `${appUrl}/${tenantSlug}/lookbook/${id}` };
   }
 
   const supabase = await createClient();
@@ -194,7 +195,8 @@ export async function publishLookbook(
   if (!user) return { error: "Unauthenticated" };
 
   const service = createServiceClient();
-  const publishedUrl = `https://${tenantSlug}.dlookbook.com/lookbook/${id}`;
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://dlookbook.vercel.app").replace(/\/$/, "");
+  const publishedUrl = `${appUrl}/${tenantSlug}/lookbook/${id}`;
 
   const { error } = await service
     .from("lookbooks")

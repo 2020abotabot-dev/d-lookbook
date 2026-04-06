@@ -23,9 +23,10 @@ interface Props {
 }
 
 export default function EditLookbookClient({ lookbookId, lookbook, sections: initialSections, assignments, products, tenant }: Props) {
-  const [step, setStep]               = useState<Step>("Template");
-  const [liveSections, setLiveSections] = useState<DbLookbookSection[]>(initialSections);
-  const [publishUrl, setPublishUrl]   = useState(lookbook.published_url);
+  const [step, setStep]                     = useState<Step>("Template");
+  const [liveSections, setLiveSections]     = useState<DbLookbookSection[]>(initialSections);
+  const [liveAssignments, setLiveAssignments] = useState<DbLookbookProduct[]>(assignments);
+  const [publishUrl, setPublishUrl]         = useState(lookbook.published_url);
   const [publishMsg, setPublishMsg]   = useState<string | null>(null);
   const [isPending, startTransition]  = useTransition();
 
@@ -133,7 +134,8 @@ export default function EditLookbookClient({ lookbookId, lookbook, sections: ini
                 tenantId={tenant.id}
                 allProducts={products}
                 sections={liveSections}
-                initialAssignments={assignments}
+                initialAssignments={liveAssignments}
+                onAssignmentsChange={setLiveAssignments}
               />
             )}
             <div className="builder-panel__footer">
@@ -148,7 +150,7 @@ export default function EditLookbookClient({ lookbookId, lookbook, sections: ini
             <BuilderPreview
               lookbook={lookbook}
               sections={liveSections}
-              assignments={assignments}
+              assignments={liveAssignments}
               products={products}
               tenant={tenant}
             />
