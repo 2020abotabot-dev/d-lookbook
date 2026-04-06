@@ -23,12 +23,13 @@ interface SectionItemProps {
   title: string;
   type: SectionType;
   config: Record<string, unknown>;
+  tenantId: string;
   onConfigSave: (id: string, config: Record<string, unknown>) => void;
   onDelete: (id: string) => void;
 }
 
 export default function SectionItem({
-  id, title, type, config, onConfigSave, onDelete
+  id, title, type, config, tenantId, onConfigSave, onDelete
 }: SectionItemProps) {
   const [showConfig, setShowConfig] = useState(false);
 
@@ -80,6 +81,8 @@ export default function SectionItem({
           type={type}
           title={title}
           config={config}
+          tenantId={tenantId}
+          sectionId={id}
           onSave={cfg => onConfigSave(id, cfg)}
           onClose={() => setShowConfig(false)}
         />

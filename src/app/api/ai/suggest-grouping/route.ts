@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TEST_MODE } from "@/lib/test-mode";
-import { getAIClient, AI_MODELS } from "@/lib/ai/client";
+import { getAIClient, AI_MODELS, extractJSON } from "@/lib/ai/client";
 import { GROUPING_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 import { GeneratedGroupingSchema } from "@/lib/ai/schemas";
 import { checkAIRateLimit, incrementAIUsage } from "@/lib/ai/rate-limit";
@@ -65,13 +65,7 @@ export async function POST(req: NextRequest) {
     const response = await client.messages.create({
       model:      AI_MODELS.fast,
       max_tokens: 1024,
-      system: [
-        {
-          type:          "text",
-          text:          GROUPING_SYSTEM_PROMPT,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
+      system:     GROUPING_SYSTEM_PROMPT,
       messages: [
         {
           role:    "user",
@@ -81,13 +75,14 @@ export async function POST(req: NextRequest) {
     });
 
     const rawText = response.content.find(b => b.type === "text")?.text ?? "";
-    const result = GeneratedGroupingSchema.parse(JSON.parse(rawText));
+    const result = GeneratedGroupingSchema.parse(JSON.parse(extractJSON(rawText)));
 
     await incrementAIUsage(body.tenantId);
 
     return NextResponse.json(result);
   } catch (err) {
-    console.error("suggest-grouping error:", err);
-    return NextResponse.json({ error: "AI generation failed" }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("suggest-grouping error:", msg);
+    return NextResponse.json({ error: `AI generation failed: ${msg}` }, { status: 500 });
   }
 }

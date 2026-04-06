@@ -231,3 +231,36 @@ export async function publishLookbook(
 
   return { url: publishedUrl };
 }
+
+export async function uploadSectionMedia(
+  formData: FormData,
+  tenantId: string,
+  sectionId: string,
+  field = "media"
+): Promise<{ url?: string; error?: string }> {
+  const file = formData.get("file") as File | null;
+  if (!file) return { error: "No file provided" };
+
+  if (TEST_MODE) {
+    // Return a placeholder in test mode
+    return { url: `https://picsum.photos/seed/${sectionId}-${field}/1600/900` };
+  }
+
+  const service = createServiceClient();
+
+  // Ensure bucket exists (no-op if already created)
+  await service.storage.createBucket("brand-assets", { public: true }).catch(() => {});
+
+  const ext  = (file.name.split(".").pop() ?? "jpg").toLowerCase();
+  const path = `${tenantId}/sections/${sectionId}/${field}.${ext}`;
+
+  const bytes = await file.arrayBuffer();
+  const { error } = await service.storage
+    .from("brand-assets")
+    .upload(path, bytes, { upsert: true, contentType: file.type });
+
+  if (error) return { error: error.message };
+
+  const { data } = service.storage.from("brand-assets").getPublicUrl(path);
+  return { url: data.publicUrl };
+}

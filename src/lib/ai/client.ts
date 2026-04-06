@@ -14,8 +14,8 @@ export function getAIClient(): Anthropic {
 
 // Model assignments per task complexity
 export const AI_MODELS = {
-  complex: "claude-sonnet-4-6",              // Layout generation, editorial
-  fast:    "claude-haiku-4-5-20251001",      // Product copy, grouping suggestions
+  complex: "claude-opus-4-5-20250514",   // Layout generation, editorial
+  fast:    "claude-haiku-4-5-20251001",  // Product copy, grouping suggestions
 } as const;
 
 // Rate limits by plan (requests per month)
@@ -24,3 +24,13 @@ export const PLAN_LIMITS: Record<string, number> = {
   pro:        100,
   enterprise: Infinity,
 };
+
+/**
+ * Strip markdown code fences from a string and return the raw JSON content.
+ * Claude occasionally wraps JSON in ```json ... ``` despite being told not to.
+ */
+export function extractJSON(text: string): string {
+  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) return fenceMatch[1].trim();
+  return text.trim();
+}

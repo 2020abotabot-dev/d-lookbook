@@ -111,6 +111,7 @@ export default function SectionList({ lookbookId, tenantId, initial, onSectionsC
               title={s.title}
               type={s.type}
               config={s.config}
+              tenantId={tenantId}
               onConfigSave={handleConfigSave}
               onDelete={handleDelete}
             />

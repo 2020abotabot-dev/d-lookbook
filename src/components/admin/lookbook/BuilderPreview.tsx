@@ -65,8 +65,9 @@ export default function BuilderPreview({
             .sort((a, b) => a.sort_order - b.sort_order)
             .map(section => {
               if (section.type === "hero") {
+                const mediaUrl = section.config.media_url as string | undefined;
                 return (
-                  <div key={section.id} className="bp-hero">
+                  <div key={section.id} className="bp-hero" style={mediaUrl ? { backgroundImage: `url(${mediaUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}>
                     <div className="bp-hero__overlay" style={{ opacity: (section.config.overlay_opacity as number) ?? 0.4 }} />
                     <div className="bp-hero__content">
                       <h2 className="bp-hero__headline" style={{ fontFamily: `"${b.font_heading}", sans-serif`, color: b.secondary_color }}>
@@ -107,9 +108,15 @@ export default function BuilderPreview({
                 );
               }
 
+              // Generic fallback — show section type + any background image
+              const bgUrl = (section.config.media_url ?? section.config.image_left_url) as string | undefined;
               return (
-                <div key={section.id} className="bp-section">
-                  <p className="bp-section__type">{section.type.replace("_", " ")}: {section.title}</p>
+                <div
+                  key={section.id}
+                  className="bp-section bp-section--generic"
+                  style={bgUrl ? { backgroundImage: `url(${bgUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : {}}
+                >
+                  <p className="bp-section__type">{section.type.replace(/_/g, " ")}: {section.title}</p>
                 </div>
               );
             })}
