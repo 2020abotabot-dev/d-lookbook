@@ -14,8 +14,8 @@ export function getAIClient(): Anthropic {
 
 // Model assignments per task complexity
 export const AI_MODELS = {
-  complex: "claude-sonnet-4-6",   // Layout generation, editorial
-  fast:    "claude-haiku-4-5",    // Product copy, grouping suggestions
+  complex: "claude-sonnet-4-6",              // Layout generation, editorial
+  fast:    "claude-haiku-4-5-20251001",      // Product copy, grouping suggestions
 } as const;
 
 // Rate limits by plan (requests per month)

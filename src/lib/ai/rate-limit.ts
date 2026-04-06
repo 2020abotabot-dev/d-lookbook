@@ -17,7 +17,7 @@ export async function checkAIRateLimit(
 
   const { data, error } = await service
     .from("tenant_ai_usage")
-    .select("count")
+    .select("call_count")
     .eq("tenant_id", tenantId)
     .eq("month", month)
     .single();
@@ -27,7 +27,7 @@ export async function checkAIRateLimit(
     console.error("AI rate limit check error:", error.message);
   }
 
-  const used = data?.count ?? 0;
+  const used = data?.call_count ?? 0;
   if (used >= limit) {
     return {
       allowed: false,
@@ -40,11 +40,30 @@ export async function checkAIRateLimit(
 
 /**
  * Increment the AI usage counter for the current month.
- * Uses upsert so the first call of the month creates the row.
+ * Uses a read-then-upsert pattern (no RPC required).
+ * Non-fatal: swallows errors so a tracking failure never blocks the AI response.
  */
 export async function incrementAIUsage(tenantId: string): Promise<void> {
-  const service = createServiceClient();
-  const month = new Date().toISOString().slice(0, 7);
+  try {
+    const service = createServiceClient();
+    const month = new Date().toISOString().slice(0, 7);
 
-  await service.rpc("increment_ai_usage", { p_tenant_id: tenantId, p_month: month });
+    const { data } = await service
+      .from("tenant_ai_usage")
+      .select("call_count")
+      .eq("tenant_id", tenantId)
+      .eq("month", month)
+      .single();
+
+    const nextCount = (data?.call_count ?? 0) + 1;
+
+    await service
+      .from("tenant_ai_usage")
+      .upsert(
+        { tenant_id: tenantId, month, call_count: nextCount, updated_at: new Date().toISOString() },
+        { onConflict: "tenant_id,month" }
+      );
+  } catch {
+    // Non-fatal — usage tracking failure must never block the AI response
+  }
 }
