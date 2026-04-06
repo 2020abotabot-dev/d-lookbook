@@ -22,8 +22,9 @@ interface Props {
   tenant:      SessionTenant;
 }
 
-export default function EditLookbookClient({ lookbookId, lookbook, sections, assignments, products, tenant }: Props) {
+export default function EditLookbookClient({ lookbookId, lookbook, sections: initialSections, assignments, products, tenant }: Props) {
   const [step, setStep]               = useState<Step>("Template");
+  const [liveSections, setLiveSections] = useState<DbLookbookSection[]>(initialSections);
   const [publishUrl, setPublishUrl]   = useState(lookbook.published_url);
   const [publishMsg, setPublishMsg]   = useState<string | null>(null);
   const [isPending, startTransition]  = useTransition();
@@ -99,7 +100,8 @@ export default function EditLookbookClient({ lookbookId, lookbook, sections, ass
             <SectionList
               lookbookId={lookbookId}
               tenantId={tenant.id}
-              initial={sections}
+              initial={liveSections}
+              onSectionsChange={setLiveSections}
             />
             <div className="builder-panel__footer">
               <button type="button" className="btn btn--ghost" onClick={() => setStep("Template")}>Back</button>
@@ -118,7 +120,7 @@ export default function EditLookbookClient({ lookbookId, lookbook, sections, ass
                 onApply={grouping => console.log("Apply grouping", grouping)}
               />
             </div>
-            {sections.filter(s => s.type === "product_grid").length === 0 ? (
+            {liveSections.filter(s => s.type === "product_grid").length === 0 ? (
               <div className="empty-state">
                 <p className="empty-state__text">Add a Product Grid section first.</p>
                 <button type="button" className="btn btn--ghost" onClick={() => setStep("Sections")}>
@@ -130,7 +132,7 @@ export default function EditLookbookClient({ lookbookId, lookbook, sections, ass
                 lookbookId={lookbookId}
                 tenantId={tenant.id}
                 allProducts={products}
-                sections={sections}
+                sections={liveSections}
                 initialAssignments={assignments}
               />
             )}
@@ -145,7 +147,7 @@ export default function EditLookbookClient({ lookbookId, lookbook, sections, ass
           <div className="builder-panel__content">
             <BuilderPreview
               lookbook={lookbook}
-              sections={sections}
+              sections={liveSections}
               assignments={assignments}
               products={products}
               tenant={tenant}

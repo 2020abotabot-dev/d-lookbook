@@ -37,10 +37,16 @@ interface SectionListProps {
   lookbookId: string;
   tenantId: string;
   initial: DbLookbookSection[];
+  onSectionsChange?: (sections: DbLookbookSection[]) => void;
 }
 
-export default function SectionList({ lookbookId, tenantId, initial }: SectionListProps) {
+export default function SectionList({ lookbookId, tenantId, initial, onSectionsChange }: SectionListProps) {
   const [sections, setSections] = useState(initial);
+
+  function updateSections(next: DbLookbookSection[]) {
+    setSections(next);
+    onSectionsChange?.(next);
+  }
   const [showAdd, setShowAdd]   = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor));
@@ -52,35 +58,40 @@ export default function SectionList({ lookbookId, tenantId, initial }: SectionLi
     const oldIdx = sections.findIndex(s => s.id === active.id);
     const newIdx = sections.findIndex(s => s.id === over.id);
     const next   = arrayMove(sections, oldIdx, newIdx).map((s, i) => ({ ...s, sort_order: i }));
-    setSections(next);
+    updateSections(next);
     reorderSections(lookbookId, next.map(s => s.id));
   }
 
   async function handleAdd(type: SectionType) {
     setShowAdd(false);
     const newSection: DbLookbookSection = {
-      id:          `sec-${Date.now()}`,
+      id:          crypto.randomUUID(),
       lookbook_id: lookbookId,
       tenant_id:   tenantId,
-      title:       `New ${type.replace("_", " ")}`,
+      title:       `New ${type.replace(/_/g, " ")}`,
       description: null,
       type,
       config:      {},
       sort_order:  sections.length,
       created_at:  new Date().toISOString(),
     };
-    setSections(prev => [...prev, newSection]);
-    await upsertSection({ ...newSection });
+    // Optimistic add then persist
+    updateSections([...sections, newSection]);
+    const result = await upsertSection(newSection);
+    if ((result as { error?: string }).error) {
+      updateSections(sections); // rollback
+    }
   }
 
   async function handleConfigSave(id: string, config: Record<string, unknown>) {
-    setSections(prev => prev.map(s => s.id === id ? { ...s, config } : s));
+    const next = sections.map(s => s.id === id ? { ...s, config } : s);
+    updateSections(next);
     const section = sections.find(s => s.id === id);
     if (section) await upsertSection({ ...section, config });
   }
 
   async function handleDelete(id: string) {
-    setSections(prev => prev.filter(s => s.id !== id));
+    updateSections(sections.filter(s => s.id !== id));
     await deleteSection(id);
   }
 

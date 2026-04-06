@@ -1,26 +1,11 @@
-"use client";
-
-import { useState, useTransition } from "react";
-import { TEST_MODE } from "@/lib/test-mode";
-import { MOCK_TENANT } from "@/lib/mock/data";
-import { saveCustomDomain } from "@/app/actions/branding";
+import { getCurrentTenant } from "@/lib/server/session";
+import DomainClient from "@/components/admin/settings/DomainClient";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 
-export default function DomainPage() {
-  const tenant = MOCK_TENANT; // TODO: real fetch
-  const [domain, setDomain] = useState(tenant.custom_domain ?? "");
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+export const metadata = { title: "Domain — Settings — DLookBook" };
 
-  function handleSave() {
-    startTransition(async () => {
-      setError(null);
-      const result = await saveCustomDomain(tenant.id, domain);
-      if (result.success) setSaved(true);
-      else setError(result.error ?? "Failed to save");
-    });
-  }
+export default async function DomainPage() {
+  const { tenant } = await getCurrentTenant();
 
   return (
     <div className="platform-page">
@@ -31,69 +16,11 @@ export default function DomainPage() {
           <p className="platform-page__sub">Configure your lookbook URL</p>
         </div>
       </div>
-
-      <div className="settings-sections">
-        <section className="settings-section">
-          <h2 className="settings-section__title">Subdomain</h2>
-          <div className="settings-form">
-            <label className="settings-label">
-              Your lookbook URL
-              <div className="settings-slug">
-                <span className="settings-slug__prefix">https://</span>
-                <input className="settings-input" value={tenant.slug} disabled />
-                <span className="settings-slug__suffix">.dlookbook.com</span>
-              </div>
-            </label>
-          </div>
-        </section>
-
-        <section className="settings-section">
-          <h2 className="settings-section__title">Custom domain</h2>
-          <div className="settings-form">
-            <label className="settings-label">
-              Domain
-              <input
-                className="settings-input"
-                placeholder="lookbook.yourbrand.com"
-                value={domain}
-                onChange={e => { setDomain(e.target.value); setSaved(false); }}
-              />
-            </label>
-
-            {domain && (
-              <div className="dns-instructions">
-                <p className="dns-instructions__title">DNS configuration</p>
-                <p className="dns-instructions__desc">
-                  Add the following record to your DNS provider:
-                </p>
-                <div className="dns-record">
-                  <span className="dns-record__type">CNAME</span>
-                  <span className="dns-record__name">{domain}</span>
-                  <span className="dns-record__value">cname.dlookbook.com</span>
-                </div>
-                <div className="domain-status domain-status--pending">
-                  Pending verification
-                </div>
-              </div>
-            )}
-
-            {error && <p className="form-error">{error}</p>}
-            {saved && (
-              <p className="form-success">
-                {TEST_MODE ? "Saved (test mode)" : "Domain saved"}
-              </p>
-            )}
-            <button
-              type="button"
-              className="btn btn--primary"
-              onClick={handleSave}
-              disabled={isPending}
-            >
-              {isPending ? "Saving…" : "Save domain"}
-            </button>
-          </div>
-        </section>
-      </div>
+      <DomainClient
+        tenantId={tenant.id}
+        slug={tenant.slug}
+        initialDomain={tenant.custom_domain ?? ""}
+      />
     </div>
   );
 }

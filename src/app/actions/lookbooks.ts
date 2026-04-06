@@ -78,16 +78,18 @@ export async function updateLookbookConfig(
 
 export async function upsertSection(
   section: Omit<LookbookSection, "created_at">
-): Promise<{ error?: string }> {
-  if (TEST_MODE) return {};
+): Promise<{ id?: string; error?: string }> {
+  if (TEST_MODE) return { id: section.id };
 
   const service = createServiceClient();
-  const { error } = await service
+  const { data, error } = await service
     .from("lookbook_sections")
-    .upsert(section, { onConflict: "id" });
+    .upsert(section, { onConflict: "id" })
+    .select("id")
+    .single();
 
   if (error) return { error: error.message };
-  return {};
+  return { id: data?.id ?? section.id };
 }
 
 export async function deleteSection(id: string): Promise<{ error?: string }> {

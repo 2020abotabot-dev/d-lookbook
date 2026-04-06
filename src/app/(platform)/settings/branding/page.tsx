@@ -1,13 +1,11 @@
-import { TEST_MODE } from "@/lib/test-mode";
-import { MOCK_TENANT } from "@/lib/mock/data";
+import { getCurrentTenant } from "@/lib/server/session";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import BrandingForm from "@/components/admin/branding/BrandingForm";
 
 export const metadata = { title: "Branding — Settings — DLookBook" };
 
 export default async function BrandingPage() {
-  // In production: load tenant from Supabase via service client
-  const tenant = MOCK_TENANT; // TODO: replace with real DB fetch when !TEST_MODE
+  const { tenant } = await getCurrentTenant();
 
   return (
     <div className="platform-page platform-page--wide">
