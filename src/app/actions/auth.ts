@@ -140,6 +140,48 @@ export async function signIn(formData: FormData): Promise<void> {
     redirect("/login?error=no_session_returned");
   }
 
+  // Auto-provision tenant + user record if missing (e.g. signed up in test mode)
+  const service = createServiceClient();
+  const { data: existing } = await service
+    .from("users")
+    .select("id")
+    .eq("id", data.session.user.id)
+    .single();
+
+  if (!existing) {
+    const fallbackName = data.session.user.user_metadata?.full_name
+      ?? email.split("@")[0]
+      ?? "My Brand";
+    const slug = await generateUniqueSlug(fallbackName);
+    const { data: tenant } = await service
+      .from("tenants")
+      .insert({
+        name: fallbackName,
+        slug,
+        branding: {
+          logo_url: "", primary_color: "#000000", secondary_color: "#ffffff",
+          accent_color: "#0070f3", font_heading: "sans-serif",
+          font_body: "sans-serif", favicon_url: "",
+        },
+        settings: {
+          company_url: "", contact_email: email,
+          default_currency: "EUR", locale: "en",
+        },
+      })
+      .select("id")
+      .single();
+
+    if (tenant) {
+      await service.from("users").insert({
+        id:        data.session.user.id,
+        tenant_id: tenant.id,
+        email,
+        full_name: fallbackName,
+        role:      "owner",
+      });
+    }
+  }
+
   redirect("/dashboard");
 }
 
