@@ -53,7 +53,6 @@ export async function middleware(request: NextRequest) {
 
   // 1. Refresh Supabase session
   const { response, userId } = await updateSession(request);
-  console.log(`[MW] ${pathname} | userId=${userId ?? "null"} | cookies=${request.cookies.getAll().map(c => c.name).join(",") || "none"}`);
 
   // 2. Determine context from hostname
   // Platform = exact domain, localhost, or any *.vercel.app preview URL
