@@ -20,6 +20,7 @@ const mwJsPath  = path.join(serverDir, "middleware.js");
 // Ensure .next/server exists (may not on a clean Vercel build)
 fs.mkdirSync(serverDir, { recursive: true });
 
+
 // Create minimal valid nft.json stub
 if (!fs.existsSync(nftPath)) {
   fs.writeFileSync(nftPath, JSON.stringify({ version: 1, files: [] }));

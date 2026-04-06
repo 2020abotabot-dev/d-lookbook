@@ -126,10 +126,18 @@ export async function signIn(formData: FormData): Promise<void> {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    redirect("/login?error=invalid_credentials");
+    const msg = error.message?.toLowerCase() ?? "";
+    if (msg.includes("email not confirmed")) {
+      redirect("/login?error=email_not_confirmed");
+    }
+    redirect(`/login?error=${encodeURIComponent(error.message ?? "invalid_credentials")}`);
+  }
+
+  if (!data.session) {
+    redirect("/login?error=no_session_returned");
   }
 
   redirect("/dashboard");
